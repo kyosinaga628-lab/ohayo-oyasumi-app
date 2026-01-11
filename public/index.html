@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="description" content="おはよう・おやすみボタンアプリ - 大切な人への生存確認メッセージ">
+    
+    <title>おはよう・おやすみボタン</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- スクリーン1: 初回登録 -->
+        <div id="screen-register" class="screen">
+            <div class="screen-content">
+                <div class="logo-container">
+                    <div class="logo">
+                        <span class="sun">🌅</span>
+                        <span class="moon">🌙</span>
+                    </div>
+                    <h1>おはよう・おやすみ</h1>
+                    <p class="subtitle">大切な人への生存確認メッセージ</p>
+                </div>
+                <div class="form-group">
+                    <label for="nickname">ニックネーム</label>
+                    <input type="text" id="nickname" placeholder="例: たろう" maxlength="20" autocomplete="off">
+                </div>
+                <button id="btn-register" class="btn btn-primary">
+                    <span>はじめる</span>
+                    <svg class="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- スクリーン2: IDの表示・ペアリング -->
+        <div id="screen-pair" class="screen hidden">
+            <div class="screen-content">
+                <div class="id-display">
+                    <p class="id-label">あなたの識別番号</p>
+                    <div class="id-box">
+                        <span id="my-id">------</span>
+                        <button id="btn-copy-id" class="btn-icon" title="コピー">
+                            <svg viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                        </button>
+                    </div>
+                    <p class="id-hint">この番号を相手に伝えてください</p>
+                </div>
+                <div class="divider">
+                    <span>または</span>
+                </div>
+                <div class="form-group">
+                    <label for="partner-id">相手の識別番号</label>
+                    <input type="text" id="partner-id" placeholder="6桁の番号" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                </div>
+                <button id="btn-pair" class="btn btn-secondary">
+                    <span>ペアリング</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- スクリーン3: メイン画面 -->
+        <div id="screen-main" class="screen hidden">
+            <div class="screen-content main-content">
+                <div class="status-bar">
+                    <div class="user-info">
+                        <span id="user-name">-</span>
+                        <span id="user-id-small" class="id-small">ID: ------</span>
+                    </div>
+                    <div class="partner-info">
+                        <span class="partner-label">ペア:</span>
+                        <span id="partner-name">-</span>
+                    </div>
+                </div>
+
+                <div class="button-area">
+                    <button id="btn-morning" class="greeting-btn morning">
+                        <div class="btn-icon-large">🌅</div>
+                        <div class="btn-text">おはよう</div>
+                        <div class="btn-ripple"></div>
+                    </button>
+                    <button id="btn-night" class="greeting-btn night">
+                        <div class="btn-icon-large">🌙</div>
+                        <div class="btn-text">おやすみ</div>
+                        <div class="btn-ripple"></div>
+                    </button>
+                </div>
+
+                <div id="message-feedback" class="feedback hidden">
+                    <div class="feedback-content">
+                        <div class="feedback-icon">✓</div>
+                        <p class="feedback-text">メッセージを送信しました！</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="btn-settings" class="btn-settings" title="設定">
+                <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            </button>
+        </div>
+
+        <!-- 設定パネル -->
+        <div id="settings-panel" class="settings-panel hidden">
+            <div class="settings-content">
+                <button id="btn-close-settings" class="btn-close">×</button>
+                <h2>設定</h2>
+                <div class="settings-section">
+                    <h3>識別番号</h3>
+                    <p id="settings-my-id" class="settings-id">------</p>
+                </div>
+                <div class="settings-section">
+                    <h3>ペアリング変更</h3>
+                    <div class="form-group">
+                        <input type="text" id="settings-partner-id" placeholder="新しい相手のID" maxlength="6" inputmode="numeric">
+                    </div>
+                    <button id="btn-change-pair" class="btn btn-secondary">変更</button>
+                </div>
+                <div class="settings-section">
+                    <button id="btn-reset" class="btn btn-danger">データをリセット</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Production dependencies only
+node_modules/
+*.log
+
+# Database (will be regenerated)
+server/data.db
+
+# VAPID keys (will be regenerated on deploy)
+server/vapid-keys.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
