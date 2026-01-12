@@ -40,7 +40,13 @@ const elements = {
     settingsMyId: document.getElementById('settings-my-id'),
     settingsPartnerIdInput: document.getElementById('settings-partner-id'),
     btnChangePair: document.getElementById('btn-change-pair'),
-    btnReset: document.getElementById('btn-reset')
+    btnReset: document.getElementById('btn-reset'),
+
+    // Notification & Install
+    notificationBanner: document.getElementById('notification-banner'),
+    btnEnableNotification: document.getElementById('btn-enable-notification'),
+    installGuide: document.getElementById('install-guide'),
+    btnDismissGuide: document.getElementById('btn-dismiss-guide')
 };
 
 // ==================== API Functions ====================
@@ -81,20 +87,20 @@ async function initApp() {
                     state.userName = data.user.name;
                     const serverPartnerId = data.partner?.id || null;
                     const serverPartnerName = data.partner?.name || null;
-                    
+
                     // データ更新があれば保存
                     if (state.userName !== localStorage.getItem('userName') ||
                         state.partnerName !== serverPartnerName) {
-                        
+
                         state.partnerId = serverPartnerId;
                         state.partnerName = serverPartnerName;
-                        
+
                         localStorage.setItem('userName', state.userName);
                         if (state.partnerId) {
                             localStorage.setItem('partnerId', state.partnerId);
                             localStorage.setItem('partnerName', state.partnerName);
                         }
-                        
+
                         // 画面更新
                         if (state.partnerName) {
                             elements.userName.textContent = state.userName;
@@ -136,7 +142,13 @@ function showMainScreen() {
     elements.settingsMyId.textContent = state.userId;
     showScreen('main');
 
-    // プッシュ通知の購読
+    // 通知状態をチェックしてバナー表示
+    checkNotificationStatus();
+
+    // PWAインストールガイドを表示（ブラウザで開いている場合）
+    checkInstallStatus();
+
+    // プッシュ通知の購読を試みる
     subscribeToPush();
 }
 
@@ -430,6 +442,70 @@ function showToast(message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// ==================== Notification Status Check ====================
+async function checkNotificationStatus() {
+    if (!('Notification' in window)) {
+        console.log('Notifications not supported');
+        return;
+    }
+
+    const permission = Notification.permission;
+
+    if (permission === 'default') {
+        // 未設定 → バナーを表示
+        elements.notificationBanner?.classList.remove('hidden');
+    } else if (permission === 'denied') {
+        // 拒否済み → バナーを表示（設定変更を促す）
+        elements.notificationBanner?.classList.remove('hidden');
+        if (elements.btnEnableNotification) {
+            elements.btnEnableNotification.textContent = '設定で許可';
+        }
+    } else {
+        // 許可済み → バナーを非表示
+        elements.notificationBanner?.classList.add('hidden');
+    }
+}
+
+// 通知有効化ボタン
+elements.btnEnableNotification?.addEventListener('click', async () => {
+    try {
+        const permission = await Notification.requestPermission();
+
+        if (permission === 'granted') {
+            showToast('通知を有効にしました！🔔');
+            elements.notificationBanner?.classList.add('hidden');
+
+            // プッシュ通知を購読
+            await subscribeToPush();
+        } else if (permission === 'denied') {
+            showToast('通知が拒否されました。ブラウザ設定から許可してください。', 'error');
+        }
+    } catch (error) {
+        console.error('Notification permission error:', error);
+        showToast('通知の設定に失敗しました', 'error');
+    }
+});
+
+// ==================== PWA Install Check ====================
+function checkInstallStatus() {
+    // PWAとしてインストール済みかチェック
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+
+    // 既に非表示にした場合はスキップ
+    const guideDismissed = localStorage.getItem('installGuideDismissed');
+
+    if (!isStandalone && !guideDismissed) {
+        elements.installGuide?.classList.remove('hidden');
+    }
+}
+
+// インストールガイド非表示ボタン
+elements.btnDismissGuide?.addEventListener('click', () => {
+    elements.installGuide?.classList.add('hidden');
+    localStorage.setItem('installGuideDismissed', 'true');
+});
 
 // ==================== Initialize ====================
 initApp();

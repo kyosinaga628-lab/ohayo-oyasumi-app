@@ -630,3 +630,133 @@ html, body {
         padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom));
     }
 }
+
+/* ==================== Notification Banner ==================== */
+.notification-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, rgba(255, 159, 67, 0.15), rgba(108, 92, 231, 0.15));
+    border: 1px solid var(--morning-primary);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-md);
+}
+
+.notification-banner.hidden {
+    display: none;
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+}
+
+.banner-icon {
+    font-size: 1.5rem;
+}
+
+.banner-text {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.btn-small {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+/* ==================== Install Guide ==================== */
+.install-guide {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-glass);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-md);
+}
+
+.install-guide.hidden {
+    display: none;
+}
+
+.guide-content {
+    flex: 1;
+}
+
+.guide-content p {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.guide-steps {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.guide-steps strong {
+    color: var(--morning-primary);
+}
+
+/* iOS/Android specific display */
+.ios-guide {
+    display: block;
+}
+
+.android-guide {
+    display: none;
+}
+
+/* Detect Android via user-agent would require JS, so show both */
+@media screen and (max-width: 768px) {
+    .ios-guide, .android-guide {
+        display: block;
+    }
+}
+
+.btn-close-small {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.btn-close-small:hover {
+    color: var(--text-primary);
+}
+
+/* ==================== Notification Status Indicator ==================== */
+.notification-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: var(--spacing-sm);
+}
+
+.notification-status.enabled {
+    color: var(--success-color);
+}
+
+.notification-status.disabled {
+    color: var(--danger-color);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}

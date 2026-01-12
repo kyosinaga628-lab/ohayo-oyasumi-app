@@ -98,6 +98,27 @@
                         <p class="feedback-text">メッセージを送信しました！</p>
                     </div>
                 </div>
+
+                <!-- 通知許可バナー -->
+                <div id="notification-banner" class="notification-banner hidden">
+                    <div class="banner-content">
+                        <span class="banner-icon">🔔</span>
+                        <span class="banner-text">通知を有効にしてメッセージを受け取ろう</span>
+                    </div>
+                    <button id="btn-enable-notification" class="btn btn-primary btn-small">有効にする</button>
+                </div>
+
+                <!-- PWAインストールガイド (iOS) -->
+                <div id="install-guide" class="install-guide hidden">
+                    <div class="guide-content">
+                        <p>📱 ホーム画面に追加するとアプリとして使えます</p>
+                        <p class="guide-steps">
+                            <span class="ios-guide">Safari: <strong>共有ボタン</strong> → <strong>ホーム画面に追加</strong></span>
+                            <span class="android-guide">Chrome: <strong>メニュー</strong> → <strong>アプリをインストール</strong></span>
+                        </p>
+                    </div>
+                    <button id="btn-dismiss-guide" class="btn-close-small">×</button>
+                </div>
             </div>
             
             <button id="btn-settings" class="btn-settings" title="設定">
