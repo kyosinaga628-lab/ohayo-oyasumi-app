@@ -1,167 +1,168 @@
-const initSqlJs = require('sql.js');
-const fs = require('fs');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
-const dbPath = path.join(__dirname, 'data.db');
+// Supabase設定（環境変数から取得、フォールバックとして直接値を使用）
+const supabaseUrl = process.env.SUPABASE_URL || 'https://epkebntxvmshlhilkftc.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwa2VibnR4dm1zaGxoaWxrZnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxOTQyMDUsImV4cCI6MjA4Mzc3MDIwNX0.hRTgpT7BvbdzeUTtKePPZ1VxuKC5_EeHR6yrGUTnreQ';
 
-let db = null;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// データベース初期化
+// データベース初期化（テーブル作成はSupabase側で行う）
 async function initializeDatabase() {
-    const SQL = await initSqlJs();
-
-    // 既存のDBファイルがあれば読み込む
-    if (fs.existsSync(dbPath)) {
-        const buffer = fs.readFileSync(dbPath);
-        db = new SQL.Database(buffer);
-    } else {
-        db = new SQL.Database();
-    }
-
-    // テーブル作成
-    db.run(`
-        CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS pairs (
-            user_id TEXT NOT NULL,
-            partner_id TEXT NOT NULL,
-            created_at TEXT DEFAULT (datetime('now')),
-            PRIMARY KEY (user_id, partner_id)
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS subscriptions (
-            user_id TEXT PRIMARY KEY,
-            endpoint TEXT NOT NULL,
-            keys_p256dh TEXT NOT NULL,
-            keys_auth TEXT NOT NULL,
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS message_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sender_id TEXT NOT NULL,
-            receiver_id TEXT NOT NULL,
-            message_type TEXT NOT NULL,
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    `);
-
-    saveDb();
-    console.log('✅ Database initialized');
-}
-
-// DBをファイルに保存
-function saveDb() {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(dbPath, buffer);
+    console.log('✅ Supabase client initialized');
+    // テーブルが存在しない場合は作成を試みる（RLS無効の場合のみ動作）
+    // 本番環境ではSupabaseダッシュボードでテーブルを作成することを推奨
 }
 
 // 6桁のランダム識別番号を生成
 function generateUserId() {
-    const id = Math.floor(100000 + Math.random() * 900000).toString();
-    // 重複チェック
-    const result = db.exec(`SELECT id FROM users WHERE id = '${id}'`);
-    if (result.length > 0 && result[0].values.length > 0) {
-        return generateUserId(); // 再帰的に再生成
-    }
-    return id;
+    return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 // ユーザー登録
-function createUser(name) {
-    const id = generateUserId();
-    db.run(`INSERT INTO users (id, name) VALUES (?, ?)`, [id, name]);
-    saveDb();
-    return { id, name };
+async function createUser(name) {
+    let id;
+    let attempts = 0;
+
+    while (attempts < 10) {
+        id = generateUserId();
+        const { data: existing } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', id)
+            .single();
+
+        if (!existing) break;
+        attempts++;
+    }
+
+    const { data, error } = await supabase
+        .from('users')
+        .insert([{ id, name }])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Create user error:', error);
+        throw error;
+    }
+
+    return { id: data.id, name: data.name };
 }
 
 // ユーザー取得
-function getUser(id) {
-    const result = db.exec(`SELECT id, name, created_at FROM users WHERE id = ?`, [id]);
-    if (result.length === 0 || result[0].values.length === 0) {
+async function getUser(id) {
+    const { data, error } = await supabase
+        .from('users')
+        .select('id, name, created_at')
+        .eq('id', id)
+        .single();
+
+    if (error || !data) {
         return null;
     }
-    const row = result[0].values[0];
-    return { id: row[0], name: row[1], created_at: row[2] };
+
+    return data;
 }
 
 // ペアリング
-function createPair(userId, partnerId) {
+async function createPair(userId, partnerId) {
     // 相手が存在するか確認
-    const partner = getUser(partnerId);
+    const partner = await getUser(partnerId);
     if (!partner) {
         return { success: false, error: '相手のIDが見つかりません' };
     }
 
     // 既にペアリング済みか確認
-    const existing = db.exec(`SELECT * FROM pairs WHERE user_id = ? AND partner_id = ?`, [userId, partnerId]);
-    if (existing.length > 0 && existing[0].values.length > 0) {
+    const { data: existing } = await supabase
+        .from('pairs')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('partner_id', partnerId)
+        .single();
+
+    if (existing) {
         return { success: true, message: '既にペアリング済みです', partner };
     }
 
     // ペアリング作成（双方向）
-    db.run(`INSERT OR IGNORE INTO pairs (user_id, partner_id) VALUES (?, ?)`, [userId, partnerId]);
-    db.run(`INSERT OR IGNORE INTO pairs (user_id, partner_id) VALUES (?, ?)`, [partnerId, userId]);
-    saveDb();
+    const { error: error1 } = await supabase
+        .from('pairs')
+        .upsert([{ user_id: userId, partner_id: partnerId }]);
+
+    const { error: error2 } = await supabase
+        .from('pairs')
+        .upsert([{ user_id: partnerId, partner_id: userId }]);
+
+    if (error1 || error2) {
+        console.error('Pair error:', error1 || error2);
+        return { success: false, error: 'ペアリングに失敗しました' };
+    }
 
     return { success: true, message: 'ペアリングしました', partner };
 }
 
 // パートナー取得
-function getPartner(userId) {
-    const result = db.exec(`
-        SELECT u.id, u.name, u.created_at FROM pairs p 
-        JOIN users u ON p.partner_id = u.id 
-        WHERE p.user_id = ?
-    `, [userId]);
-    if (result.length === 0 || result[0].values.length === 0) {
+async function getPartner(userId) {
+    const { data: pair } = await supabase
+        .from('pairs')
+        .select('partner_id')
+        .eq('user_id', userId)
+        .single();
+
+    if (!pair) {
         return null;
     }
-    const row = result[0].values[0];
-    return { id: row[0], name: row[1], created_at: row[2] };
+
+    return await getUser(pair.partner_id);
 }
 
 // プッシュ購読を保存
-function saveSubscription(userId, subscription) {
-    db.run(`
-        INSERT OR REPLACE INTO subscriptions (user_id, endpoint, keys_p256dh, keys_auth)
-        VALUES (?, ?, ?, ?)
-    `, [userId, subscription.endpoint, subscription.keys.p256dh, subscription.keys.auth]);
-    saveDb();
+async function saveSubscription(userId, subscription) {
+    const { error } = await supabase
+        .from('subscriptions')
+        .upsert([{
+            user_id: userId,
+            endpoint: subscription.endpoint,
+            keys_p256dh: subscription.keys.p256dh,
+            keys_auth: subscription.keys.auth
+        }]);
+
+    if (error) {
+        console.error('Save subscription error:', error);
+        throw error;
+    }
 }
 
 // プッシュ購読を取得
-function getSubscription(userId) {
-    const result = db.exec(`SELECT endpoint, keys_p256dh, keys_auth FROM subscriptions WHERE user_id = ?`, [userId]);
-    if (result.length === 0 || result[0].values.length === 0) {
+async function getSubscription(userId) {
+    const { data, error } = await supabase
+        .from('subscriptions')
+        .select('endpoint, keys_p256dh, keys_auth')
+        .eq('user_id', userId)
+        .single();
+
+    if (error || !data) {
         return null;
     }
-    const row = result[0].values[0];
+
     return {
-        endpoint: row[0],
+        endpoint: data.endpoint,
         keys: {
-            p256dh: row[1],
-            auth: row[2]
+            p256dh: data.keys_p256dh,
+            auth: data.keys_auth
         }
     };
 }
 
 // メッセージログを保存
-function logMessage(senderId, receiverId, messageType) {
-    db.run(`INSERT INTO message_logs (sender_id, receiver_id, message_type) VALUES (?, ?, ?)`,
-        [senderId, receiverId, messageType]);
-    saveDb();
+async function logMessage(senderId, receiverId, messageType) {
+    await supabase
+        .from('message_logs')
+        .insert([{
+            sender_id: senderId,
+            receiver_id: receiverId,
+            message_type: messageType
+        }]);
 }
 
 module.exports = {
