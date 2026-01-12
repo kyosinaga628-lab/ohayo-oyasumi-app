@@ -25,13 +25,13 @@ async function startServer() {
     });
 
     // ユーザー登録
-    app.post('/api/register', (req, res) => {
+    app.post('/api/register', async (req, res) => {
         try {
             const { name } = req.body;
             if (!name || name.trim().length === 0) {
                 return res.status(400).json({ error: 'ニックネームを入力してください' });
             }
-            const user = db.createUser(name.trim());
+            const user = await db.createUser(name.trim());
             res.json({ success: true, user });
         } catch (error) {
             console.error('Registration error:', error);
@@ -40,13 +40,13 @@ async function startServer() {
     });
 
     // ユーザー情報取得
-    app.get('/api/user/:id', (req, res) => {
+    app.get('/api/user/:id', async (req, res) => {
         try {
-            const user = db.getUser(req.params.id);
+            const user = await db.getUser(req.params.id);
             if (!user) {
                 return res.status(404).json({ error: 'ユーザーが見つかりません' });
             }
-            const partner = db.getPartner(req.params.id);
+            const partner = await db.getPartner(req.params.id);
             res.json({ user, partner });
         } catch (error) {
             console.error('Get user error:', error);
@@ -55,7 +55,7 @@ async function startServer() {
     });
 
     // ペアリング
-    app.post('/api/pair', (req, res) => {
+    app.post('/api/pair', async (req, res) => {
         try {
             const { userId, partnerId } = req.body;
             if (!userId || !partnerId) {
@@ -64,7 +64,7 @@ async function startServer() {
             if (userId === partnerId) {
                 return res.status(400).json({ error: '自分自身とはペアリングできません' });
             }
-            const result = db.createPair(userId, partnerId);
+            const result = await db.createPair(userId, partnerId);
             res.json(result);
         } catch (error) {
             console.error('Pair error:', error);
@@ -73,13 +73,13 @@ async function startServer() {
     });
 
     // プッシュ通知購読
-    app.post('/api/subscribe', (req, res) => {
+    app.post('/api/subscribe', async (req, res) => {
         try {
             const { userId, subscription } = req.body;
             if (!userId || !subscription) {
                 return res.status(400).json({ error: 'データが不足しています' });
             }
-            db.saveSubscription(userId, subscription);
+            await db.saveSubscription(userId, subscription);
             res.json({ success: true, message: '通知を有効にしました' });
         } catch (error) {
             console.error('Subscribe error:', error);
@@ -96,19 +96,19 @@ async function startServer() {
             }
 
             // 送信者情報取得
-            const sender = db.getUser(userId);
+            const sender = await db.getUser(userId);
             if (!sender) {
                 return res.status(404).json({ error: 'ユーザーが見つかりません' });
             }
 
             // パートナー取得
-            const partner = db.getPartner(userId);
+            const partner = await db.getPartner(userId);
             if (!partner) {
                 return res.status(400).json({ error: 'ペアリングされていません' });
             }
 
             // パートナーのプッシュ購読取得
-            const subscription = db.getSubscription(partner.id);
+            const subscription = await db.getSubscription(partner.id);
             if (!subscription) {
                 return res.status(400).json({ error: '相手が通知を許可していません' });
             }
@@ -141,7 +141,7 @@ async function startServer() {
             });
 
             // メッセージログ保存
-            db.logMessage(userId, partner.id, messageType);
+            await db.logMessage(userId, partner.id, messageType);
 
             res.json({
                 success: true,
