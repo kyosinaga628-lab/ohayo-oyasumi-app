@@ -67,29 +67,55 @@ function showScreen(screenName) {
 async function initApp() {
     // 登録済みかチェック
     if (state.userId) {
-        // ユーザー情報を取得
-        try {
-            const data = await api(`/api/user/${state.userId}`);
-            if (data.user) {
-                state.userName = data.user.name;
-                state.partnerId = data.partner?.id || null;
-                state.partnerName = data.partner?.name || null;
-
-                localStorage.setItem('userName', state.userName);
-                if (state.partnerId) {
-                    localStorage.setItem('partnerId', state.partnerId);
-                    localStorage.setItem('partnerName', state.partnerName);
-                }
-            }
-        } catch (e) {
-            console.error('Failed to fetch user data:', e);
-        }
-
+        // Renderのスリープ対策: APIを待たずに、まずローカル情報で画面を表示
         if (state.partnerName) {
             showMainScreen();
         } else {
             showPairScreen();
         }
+
+        // 裏でユーザー情報を取得して更新
+        api(`/api/user/${state.userId}`)
+            .then(data => {
+                if (data.user) {
+                    state.userName = data.user.name;
+                    const serverPartnerId = data.partner?.id || null;
+                    const serverPartnerName = data.partner?.name || null;
+                    
+                    // データ更新があれば保存
+                    if (state.userName !== localStorage.getItem('userName') ||
+                        state.partnerName !== serverPartnerName) {
+                        
+                        state.partnerId = serverPartnerId;
+                        state.partnerName = serverPartnerName;
+                        
+                        localStorage.setItem('userName', state.userName);
+                        if (state.partnerId) {
+                            localStorage.setItem('partnerId', state.partnerId);
+                            localStorage.setItem('partnerName', state.partnerName);
+                        }
+                        
+                        // 画面更新
+                        if (state.partnerName) {
+                            elements.userName.textContent = state.userName;
+                            elements.partnerName.textContent = state.partnerName;
+                            // もしペアリング画面にいたらメインへ
+                            if (!document.getElementById('screen-main').classList.contains('hidden') === false) {
+                                showMainScreen();
+                            }
+                        } else {
+                            // ペアリングが解消されていた場合など
+                            if (!document.getElementById('screen-pair').classList.contains('hidden') === false) {
+                                showPairScreen();
+                            }
+                        }
+                    }
+                }
+            })
+            .catch(e => {
+                console.error('Background sync failed:', e);
+            });
+
     } else {
         showScreen('register');
     }
