@@ -167,8 +167,20 @@ async function startServer() {
         }
     });
 
-    // SPA対応 - すべてのルートでindex.htmlを返す
-    app.get('*', (req, res) => {
+    // SPA対応 - 静的ファイル以外のルートでindex.htmlを返す
+    // 注意: express.staticで提供される静的ファイルはこのミドルウェアより先に処理される
+    // ファイル拡張子を持つリクエストは404を返す（静的ファイルが見つからなかった場合）
+    app.get('*', (req, res, next) => {
+        // 音声、画像など静的ファイルへのリクエストの場合は404を返す
+        const staticExtensions = ['.mp3', '.wav', '.ogg', '.jpg', '.png', '.gif', '.ico', '.css', '.js', '.json', '.webp', '.svg'];
+        const hasExtension = staticExtensions.some(ext => req.path.toLowerCase().endsWith(ext));
+
+        if (hasExtension) {
+            // 静的ファイルが見つからなかった場合は404
+            return res.status(404).send('File not found');
+        }
+
+        // その他のルートはindex.htmlを返す（SPA対応）
         res.sendFile(path.join(__dirname, '../public/index.html'));
     });
 

@@ -310,6 +310,9 @@ async function sendGreeting(type) {
 
     btn.disabled = true;
 
+    // iOS対応: ユーザーの操作直後に音声を再生（API呼び出しの前）
+    speakGreeting(type);
+
     try {
         const data = await api('/api/send', 'POST', {
             userId: state.userId,
@@ -319,9 +322,6 @@ async function sendGreeting(type) {
         if (data.success) {
             // 成功フィードバック表示
             showFeedback(data.greeting);
-
-            // 音声再生
-            speakGreeting(type);
         } else {
             showToast(data.error || '送信に失敗しました', 'error');
         }
