@@ -349,72 +349,98 @@ function showFeedback(greeting) {
     }, 3000);
 }
 
-// ==================== Speech Synthesis ====================
-const greetingMessages = {
+// ==================== Audio Playback ====================
+// 音声ファイルの設定
+const audioConfig = {
+    morning: {
+        count: 8,  // 利用可能な音声ファイル数
+        path: '/audio/morning/'
+    },
+    night: {
+        count: 8,  // 利用可能な音声ファイル数
+        path: '/audio/night/'
+    }
+};
+
+// 音声ファイルのキャッシュ
+const audioCache = {};
+
+// メイン音声再生関数
+async function speakGreeting(type) {
+    // まずカスタム音声ファイルを試す
+    const played = await playCustomAudio(type);
+
+    // 音声ファイルがなければフォールバック
+    if (!played) {
+        playFallbackSpeech(type);
+    }
+}
+
+// カスタム音声ファイルを再生
+async function playCustomAudio(type) {
+    const config = audioConfig[type];
+    if (!config || config.count === 0) return false;
+
+    // ランダムにファイルを選択 (1.mp3, 2.mp3, ...)
+    const fileNum = Math.floor(Math.random() * config.count) + 1;
+    const audioPath = `${config.path}${fileNum}.mp3`;
+
+    try {
+        // キャッシュから取得、なければ新規作成
+        if (!audioCache[audioPath]) {
+            audioCache[audioPath] = new Audio(audioPath);
+        }
+
+        const audio = audioCache[audioPath];
+        audio.currentTime = 0;  // 最初から再生
+
+        await audio.play();
+        console.log(`✅ Playing custom audio: ${audioPath}`);
+        return true;
+    } catch (error) {
+        console.log(`❌ Custom audio not available: ${audioPath}`, error.message);
+        return false;
+    }
+}
+
+// フォールバック: Web Speech API
+const fallbackMessages = {
     morning: [
         'おはようございます！きょうもいちにちがんばろう！',
         'おはよう！すてきないちにちになりますように！',
         'おはようございます！きょうもよろしくね！',
-        'おはよー！げんきにいってらっしゃい！',
-        'おはようございます！いってきます！',
-        'おはよう！きょうもいいことありますように！',
-        'おはようございます！さぁ、がんばろう！',
-        'おはよー！あさごはんたべた？'
+        'おはよー！げんきにいってらっしゃい！'
     ],
     night: [
         'おやすみなさい！いいゆめを！',
         'おやすみー！きょうもおつかれさま！',
         'おやすみなさい！また明日ね！',
-        'おやすみ！ぐっすりねてね！',
-        'おやすみなさい！きょうもありがとう！',
-        'おやすみー！ゆっくりやすんでね！',
-        'おやすみ！あしたもいいいちにちに！',
-        'おやすみなさい！しあわせなゆめを！'
+        'おやすみ！ぐっすりねてね！'
     ]
 };
 
-function speakGreeting(type) {
+function playFallbackSpeech(type) {
     if (!('speechSynthesis' in window)) {
         console.log('Speech synthesis not supported');
         return;
     }
 
-    // ランダムにメッセージを選択
-    const messages = greetingMessages[type];
+    const messages = fallbackMessages[type];
     const message = messages[Math.floor(Math.random() * messages.length)];
 
     const utterance = new SpeechSynthesisUtterance(message);
     utterance.lang = 'ja-JP';
-    utterance.rate = 0.95;  // 少しゆっくり
-    utterance.pitch = 1.4;  // 高めの声でかわいらしく
+    utterance.rate = 0.95;
+    utterance.pitch = 1.4;
 
-    // かわいい声を優先的に選択
     const voices = speechSynthesis.getVoices();
-    const preferredVoice = selectCuteVoice(voices);
-    if (preferredVoice) {
-        utterance.voice = preferredVoice;
+    const japaneseVoice = voices.find(v => v.lang.includes('ja'));
+    if (japaneseVoice) {
+        utterance.voice = japaneseVoice;
     }
 
     speechSynthesis.speak(utterance);
-}
-
-// かわいい声を選択する関数
-function selectCuteVoice(voices) {
-    // 優先順位: 女性の日本語音声 > 日本語音声 > 任意の日本語
-    const japaneseVoices = voices.filter(v => v.lang.includes('ja'));
-
-    if (japaneseVoices.length === 0) return null;
-
-    // 女性声を優先（名前に特定のキーワードを含む場合）
-    const femaleKeywords = ['female', 'woman', 'girl', 'nanami', 'haruka', 'sayaka', 'mizuki', 'mei', 'maki', 'kyoko'];
-    const femaleVoice = japaneseVoices.find(v =>
-        femaleKeywords.some(kw => v.name.toLowerCase().includes(kw))
-    );
-
-    if (femaleVoice) return femaleVoice;
-
-    // なければ最初の日本語音声
-    return japaneseVoices[0];
+    console.log('🔊 Using fallback speech synthesis');
 }
 
 // 音声リストが非同期で読み込まれる場合の対応
