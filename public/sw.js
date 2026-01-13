@@ -1,6 +1,6 @@
 // Service Worker for おはよう・おやすみボタンアプリ
 
-const CACHE_NAME = 'ohayo-oyasumi-v4';
+const CACHE_NAME = 'ohayo-oyasumi-v5';
 const urlsToCache = [
     '/',
     '/index.html',

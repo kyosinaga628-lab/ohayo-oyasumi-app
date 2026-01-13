@@ -5,44 +5,44 @@
     --bg-secondary: #1a1a2e;
     --bg-card: rgba(30, 30, 50, 0.8);
     --bg-glass: rgba(255, 255, 255, 0.05);
-    
+
     /* Text */
     --text-primary: #ffffff;
     --text-secondary: rgba(255, 255, 255, 0.7);
     --text-muted: rgba(255, 255, 255, 0.4);
-    
+
     /* Accent Colors */
     --morning-primary: #ff9f43;
     --morning-secondary: #ffd93d;
     --morning-glow: rgba(255, 159, 67, 0.3);
-    
+
     --night-primary: #6c5ce7;
     --night-secondary: #a29bfe;
     --night-glow: rgba(108, 92, 231, 0.3);
-    
+
     /* UI */
     --border-color: rgba(255, 255, 255, 0.1);
     --success-color: #00d26a;
     --danger-color: #ff6b6b;
-    
+
     /* Spacing */
     --spacing-xs: 4px;
     --spacing-sm: 8px;
     --spacing-md: 16px;
     --spacing-lg: 24px;
     --spacing-xl: 32px;
-    
+
     /* Border Radius */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 20px;
     --radius-full: 50%;
-    
+
     /* Shadows */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-    
+
     /* Transitions */
     --transition-fast: 150ms ease;
     --transition-normal: 300ms ease;
@@ -50,13 +50,16 @@
 }
 
 /* ==================== Reset & Base ==================== */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-html, body {
+html,
+body {
     height: 100%;
     font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 16px;
@@ -128,8 +131,15 @@ html, body {
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 .logo-container h1 {
@@ -625,7 +635,7 @@ html, body {
     .screen-content {
         padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
     }
-    
+
     .feedback {
         padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom));
     }
@@ -716,7 +726,9 @@ html, body {
 
 /* Detect Android via user-agent would require JS, so show both */
 @media screen and (max-width: 768px) {
-    .ios-guide, .android-guide {
+
+    .ios-guide,
+    .android-guide {
         display: block;
     }
 }
@@ -759,4 +771,108 @@ html, body {
     height: 8px;
     border-radius: 50%;
     background: currentColor;
+}
+
+/* ==================== History Section ==================== */
+.history-section {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-glass);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.history-header h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.btn-icon-small {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-icon-small:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-icon-small:active {
+    transform: scale(0.95);
+}
+
+.history-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.history-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: var(--spacing-md) 0;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-icon {
+    font-size: 1.25rem;
+    width: 32px;
+    text-align: center;
+}
+
+.history-content {
+    flex: 1;
+}
+
+.history-sender {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.history-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Scrollbar styling for history */
+.history-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
 }

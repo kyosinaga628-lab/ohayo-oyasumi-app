@@ -46,7 +46,11 @@ const elements = {
     notificationBanner: document.getElementById('notification-banner'),
     btnEnableNotification: document.getElementById('btn-enable-notification'),
     installGuide: document.getElementById('install-guide'),
-    btnDismissGuide: document.getElementById('btn-dismiss-guide')
+    btnDismissGuide: document.getElementById('btn-dismiss-guide'),
+
+    // History
+    historyList: document.getElementById('history-list'),
+    btnRefreshHistory: document.getElementById('btn-refresh-history')
 };
 
 // ==================== API Functions ====================
@@ -147,6 +151,9 @@ function showMainScreen() {
 
     // PWAインストールガイドを表示（ブラウザで開いている場合）
     checkInstallStatus();
+
+    // 履歴をロード
+    loadHistory();
 
     // プッシュ通知の購読を試みる
     subscribeToPush();
@@ -505,6 +512,81 @@ function checkInstallStatus() {
 elements.btnDismissGuide?.addEventListener('click', () => {
     elements.installGuide?.classList.add('hidden');
     localStorage.setItem('installGuideDismissed', 'true');
+});
+
+// ==================== History ====================
+async function loadHistory() {
+    if (!state.userId || !elements.historyList) return;
+
+    try {
+        const data = await api(`/api/history/${state.userId}`);
+
+        if (data.success && data.messages) {
+            renderHistory(data.messages);
+        }
+    } catch (error) {
+        console.error('Failed to load history:', error);
+    }
+}
+
+function renderHistory(messages) {
+    if (!elements.historyList) return;
+
+    if (messages.length === 0) {
+        elements.historyList.innerHTML = '<p class="history-empty">まだ挨拶を受け取っていません</p>';
+        return;
+    }
+
+    const html = messages.map(msg => {
+        const icon = msg.messageType === 'morning' ? '🌅' : '🌙';
+        const typeText = msg.messageType === 'morning' ? 'おはよう' : 'おやすみ';
+        const time = formatTime(msg.createdAt);
+
+        return `
+            <div class="history-item">
+                <div class="history-icon">${icon}</div>
+                <div class="history-content">
+                    <div class="history-sender">${escapeHtml(msg.senderName)}さんから${typeText}</div>
+                    <div class="history-time">${time}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    elements.historyList.innerHTML = html;
+}
+
+function formatTime(isoString) {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'たった今';
+    if (diffMins < 60) return `${diffMins}分前`;
+    if (diffHours < 24) return `${diffHours}時間前`;
+    if (diffDays < 7) return `${diffDays}日前`;
+
+    return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 履歴更新ボタン
+elements.btnRefreshHistory?.addEventListener('click', async () => {
+    const btn = elements.btnRefreshHistory;
+    if (btn) {
+        btn.style.animation = 'spin 0.5s linear';
+        setTimeout(() => btn.style.animation = '', 500);
+    }
+    await loadHistory();
+    showToast('履歴を更新しました');
 });
 
 // ==================== Initialize ====================

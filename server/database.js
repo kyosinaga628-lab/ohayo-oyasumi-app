@@ -165,6 +165,35 @@ async function logMessage(senderId, receiverId, messageType) {
         }]);
 }
 
+// 受信メッセージ履歴を取得
+async function getReceivedMessages(userId, limit = 20) {
+    const { data, error } = await supabase
+        .from('message_logs')
+        .select('id, sender_id, message_type, created_at')
+        .eq('receiver_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error || !data) {
+        return [];
+    }
+
+    // 送信者名を取得
+    const messagesWithSenderNames = await Promise.all(
+        data.map(async (msg) => {
+            const sender = await getUser(msg.sender_id);
+            return {
+                id: msg.id,
+                senderName: sender?.name || '不明',
+                messageType: msg.message_type,
+                createdAt: msg.created_at
+            };
+        })
+    );
+
+    return messagesWithSenderNames;
+}
+
 module.exports = {
     initializeDatabase,
     createUser,
@@ -173,5 +202,6 @@ module.exports = {
     getPartner,
     saveSubscription,
     getSubscription,
-    logMessage
+    logMessage,
+    getReceivedMessages
 };

@@ -155,6 +155,18 @@ async function startServer() {
         }
     });
 
+    // メッセージ履歴取得
+    app.get('/api/history/:userId', async (req, res) => {
+        try {
+            const { userId } = req.params;
+            const messages = await db.getReceivedMessages(userId, 20);
+            res.json({ success: true, messages });
+        } catch (error) {
+            console.error('History error:', error);
+            res.status(500).json({ error: '履歴の取得に失敗しました' });
+        }
+    });
+
     // SPA対応 - すべてのルートでindex.htmlを返す
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, '../public/index.html'));
