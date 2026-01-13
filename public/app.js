@@ -350,30 +350,71 @@ function showFeedback(greeting) {
 }
 
 // ==================== Speech Synthesis ====================
+const greetingMessages = {
+    morning: [
+        'おはようございます！きょうもいちにちがんばろう！',
+        'おはよう！すてきないちにちになりますように！',
+        'おはようございます！きょうもよろしくね！',
+        'おはよー！げんきにいってらっしゃい！',
+        'おはようございます！いってきます！',
+        'おはよう！きょうもいいことありますように！',
+        'おはようございます！さぁ、がんばろう！',
+        'おはよー！あさごはんたべた？'
+    ],
+    night: [
+        'おやすみなさい！いいゆめを！',
+        'おやすみー！きょうもおつかれさま！',
+        'おやすみなさい！また明日ね！',
+        'おやすみ！ぐっすりねてね！',
+        'おやすみなさい！きょうもありがとう！',
+        'おやすみー！ゆっくりやすんでね！',
+        'おやすみ！あしたもいいいちにちに！',
+        'おやすみなさい！しあわせなゆめを！'
+    ]
+};
+
 function speakGreeting(type) {
     if (!('speechSynthesis' in window)) {
         console.log('Speech synthesis not supported');
         return;
     }
 
-    const messages = {
-        morning: 'おはようございます！良い一日を！',
-        night: 'おやすみなさい！良い夢を！'
-    };
+    // ランダムにメッセージを選択
+    const messages = greetingMessages[type];
+    const message = messages[Math.floor(Math.random() * messages.length)];
 
-    const utterance = new SpeechSynthesisUtterance(messages[type]);
+    const utterance = new SpeechSynthesisUtterance(message);
     utterance.lang = 'ja-JP';
-    utterance.rate = 0.9;
-    utterance.pitch = 1.1;
+    utterance.rate = 0.95;  // 少しゆっくり
+    utterance.pitch = 1.4;  // 高めの声でかわいらしく
 
-    // 日本語の声を選択
+    // かわいい声を優先的に選択
     const voices = speechSynthesis.getVoices();
-    const japaneseVoice = voices.find(v => v.lang.includes('ja'));
-    if (japaneseVoice) {
-        utterance.voice = japaneseVoice;
+    const preferredVoice = selectCuteVoice(voices);
+    if (preferredVoice) {
+        utterance.voice = preferredVoice;
     }
 
     speechSynthesis.speak(utterance);
+}
+
+// かわいい声を選択する関数
+function selectCuteVoice(voices) {
+    // 優先順位: 女性の日本語音声 > 日本語音声 > 任意の日本語
+    const japaneseVoices = voices.filter(v => v.lang.includes('ja'));
+
+    if (japaneseVoices.length === 0) return null;
+
+    // 女性声を優先（名前に特定のキーワードを含む場合）
+    const femaleKeywords = ['female', 'woman', 'girl', 'nanami', 'haruka', 'sayaka', 'mizuki', 'mei', 'maki', 'kyoko'];
+    const femaleVoice = japaneseVoices.find(v =>
+        femaleKeywords.some(kw => v.name.toLowerCase().includes(kw))
+    );
+
+    if (femaleVoice) return femaleVoice;
+
+    // なければ最初の日本語音声
+    return japaneseVoices[0];
 }
 
 // 音声リストが非同期で読み込まれる場合の対応
